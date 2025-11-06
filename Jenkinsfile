@@ -2,56 +2,60 @@ pipeline {
     agent any
 
     stages {
-        //Parar todos los servicios
-        stage('Parando todos los servicios') {
+        // Parar los servicios que ya existen o en todo caso hacer caso omiso
+        stage('Parando los servicios...') {
             steps {
-                sh '''
-                    docker-compose -p adj-demo-c down || true
+                bat '''
+                    docker compose -p adj-demo-c down || exit /b 0
                 '''
             }
         }
-        //Eliminar las imagenes anteriores
-        stage('Eliminando imagenes antiguas') {
+
+        // Eliminar las imágenes creadas por ese proyecto
+        stage('Eliminando imágenes anteriores...') {
             steps {
-                sh '''
-                    IMAGES=$(docker images --filter "label=com.docker.compose.project=adj-demo-c -q") 
-                    if [ -n '$IMAGES' ]; then
-                        docker images rmi $IMAGES 
-                    else 
-                        echo "No hay imagenes para borrar..."
-                    fi
+                bat '''
+                    for /f "tokens=*" %%i in ('docker images --filter "label=com.docker.compose.project=adj-demo-c" -q') do (
+                        docker rmi -f %%i
+                    )
+                    if errorlevel 1 (
+                        echo No hay imagenes por eliminar
+                    ) else (
+                        echo Imagenes eliminadas correctamente
+                    )
                 '''
             }
-
         }
 
-        //Bajar la actualizacion
-        stage('Actualizando...') {
+        // Del recurso SCM configurado en el job, jala el repo
+        stage('Obteniendo actualización...') {
             steps {
                 checkout scm
             }
         }
 
-        //Levantar y desplegar el proyecto
-        satge('Construyendo y desplegando...') {
+        // Construir y levantar los servicios
+        stage('Construyendo y desplegando servicios...') {
             steps {
-                sh '''
-                    docker-compose up --build -d
+                bat '''
+                    docker compose up --build -d
                 '''
             }
         }
-
     }
 
     post {
         success {
-            echo 'Pipeline ejecutado exitosamente'
+            echo 'Pipeline ejecutado con éxito'
         }
+
         failure {
-            echo 'Error al ejecutar el pipeline'
+            echo 'Hubo un error al ejecutar el pipeline'
         }
+
         always {
             echo 'Pipeline finalizado'
         }
     }
 }
+
