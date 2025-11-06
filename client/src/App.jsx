@@ -21,7 +21,7 @@ function App() {
           <div className="container mt-5">
             <h2>Inicio</h2>
             <hr />
-            <button onClick= { }className="btn btn-success">Llamar a la api</button>
+            <button onClick= {() => TestController.callToAPI()}className="btn btn-success">Llamar a la api</button>
 
           </div>
     </>
